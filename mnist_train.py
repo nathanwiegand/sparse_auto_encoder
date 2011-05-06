@@ -6,7 +6,7 @@ import scipy.optimize
 import struct
 import sac
 
-images = utils.load_images("data/train-images.idx3-ubyte")
+images = utils.load_images("data/train-images-idx3-ubyte")
 labels = utils.load_labels("data/train-labels-idx1-ubyte")
 utils.save_as_figure(images[:, 0:100], "output/input.png")
 

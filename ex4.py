@@ -63,17 +63,17 @@ options = sac.SparseAutoEncoderOptions(visible_size,
 network = sac.SparseAutoEncoder(options, patches)
 
 
-def sal(theta):
-  return network.sparse_autoencoder(theta)
+# def sal(theta):
+#   return network.sparse_autoencoder(theta)
+#
+# theta = network.initialize_parameters()
 
-theta = network.initialize_parameters()
-
-numgrad = compute_numerical_gradient(lambda x: sal(x)[0], theta)
+#numgrad = compute_numerical_gradient(lambda x: sal(x)[0], theta)
 
 # Eyeball the gradients
-print np.hstack([numgrad, grad])
+#print np.hstack([numgrad, grad])
 
-diff = linalg.norm(numgrad-grad) / linalg.norm(numgrad+grad)
-print "Normed difference: %f" % diff
+#diff = linalg.norm(numgrad-grad) / linalg.norm(numgrad+grad)
+#print "Normed difference: %f" % diff
 
 network.learn()
