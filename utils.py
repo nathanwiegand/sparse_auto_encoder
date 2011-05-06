@@ -61,6 +61,7 @@ def save_as_figure(arr, filepath="output/frame.png"):
       c = buf+j*(sz+buf)
       array[r:r+sz, c:c+sz] = (arr[:,k].reshape([sz,sz], order='F') - cmin) / (cmax-cmin)
       k = k + 1
-  plt.imshow(array, interpolation='nearest', cmap=plt.cm.gray)
+#  plt.imshow(array, interpolation='nearest', cmap=plt.cm.gray)
+  plt.imshow(array, cmap=plt.cm.gray)
   plt.savefig(filepath)
   print "Saving to ", filepath

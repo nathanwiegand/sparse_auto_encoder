@@ -5,6 +5,7 @@ import numpy as np
 import scipy.optimize
 import struct
 import sac
+import pickle
 
 images = utils.load_images("data/train-images-idx3-ubyte")
 labels = utils.load_labels("data/train-labels-idx1-ubyte")
@@ -16,6 +17,11 @@ hidden_size = 196
 
 options = sac.SparseAutoEncoderOptions(visible_size,
                                        hidden_size,
-                                       output_dir="output")
+                                       output_dir="output",
+                                       max_iterations = 400)
 network = sac.SparseAutoEncoder(options, patches)
 answer = network.learn()
+
+output = open("network.pickle", "w")
+output.write(pickle.dumps(answer))
+output.close()

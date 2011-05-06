@@ -20,13 +20,22 @@ class SparseAutoEncoderOptions:
                sparsity = 0.1,
                learning_rate = 3e-3,
                beta = 3,
-               output_dir = "output"):
+               output_dir = "output",
+               max_iterations = 500):
     self.visible_size = visible_size
     self.hidden_size = hidden_size
     self.sparsity_param = sparsity
     self.learning_rate = learning_rate
     self.beta = beta
     self.output_dir = output_dir
+    self.max_iterations = max_iterations
+
+class SparseAutoEncoderSolution:
+  def __init__(self, W1, W2, b1, b2):
+    self.W1 = W1
+    self.W2 = W2
+    self.b1 = b1
+    self.b2 = b2
 
 class SparseAutoEncoder:
   def __init__(self, options, data):
@@ -79,10 +88,13 @@ class SparseAutoEncoder:
     ASSERT_SIZE(b1, (hidden_size, 1))
     ASSERT_SIZE(b2, (visible_size, 1))
 
-    utils.save_as_figure(W1.T, "%s/w1frame%03d.png" % (self.options.output_dir,
-                                                       self.frame_number))
-    utils.save_as_figure(W2.T, "%s/w2frame%03d.png" % (self.options.output_dir,
-                                                       self.frame_number))
+    if self.frame_number % 5 == 0:
+      utils.save_as_figure(W1.T,
+                           "%s/w1frame%03d.png" % (self.options.output_dir,
+                                                   self.frame_number))
+      utils.save_as_figure(W2.T,
+                           "%s/w2frame%03d.png" % (self.options.output_dir,
+                                                   self.frame_number))
     self.frame_number += 1
 
     # Forward pass
@@ -135,6 +147,10 @@ class SparseAutoEncoder:
       return self.sparse_autoencoder(theta)
     theta = self.initialize_parameters()
     same_theta = theta.copy()
-    x, f, d = scipy.optimize.fmin_l_bfgs_b(f, theta, maxfun=400, iprint=1, m=20)
+    x, f, d = scipy.optimize.fmin_l_bfgs_b(f, theta,
+                                           maxfun= self.options.max_iterations,
+                                           iprint=1, m=20)
     W1, W2, b1, b2 = self.unflatten(x)
     utils.save_as_figure(W1.T, "%s/network.png" % self.options.output_dir)
+
+    return SparseAutoEncoderSolution(W1, W2, b1, b2)
