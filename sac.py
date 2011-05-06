@@ -3,11 +3,16 @@ import matplotlib.pyplot as plt
 import scipy.optimize
 import utils
 
+def ASSERT_SIZE(matrix, shape):
+  if matrix.shape != shape:
+    raise AssertionError("Wrong shape: %s expexted: %s" %
+                            (matrix.shape, shape))
+
 class SparseAutoEncoderOptions:
   ##############################################################################
-  #  These network parameters are specified by by Andrew Ng specifically for the
-  #  MNIST data set here:
-  #     http://ufldl.stanford.edu/wiki/index.php/Exercise:Vectorization
+  #  These network parameters are specified by by Andrew Ng specifically for   #
+  #  the MNIST data set here:                                                  #
+  #     http://ufldl.stanford.edu/wiki/index.php/Exercise:Vectorization        #
   ##############################################################################
   def __init__(self,
                visible_size,
@@ -66,51 +71,70 @@ class SparseAutoEncoder:
     beta = self.options.beta
 
     x = self.data
-
     m = x.shape[1]
 
     W1, W2, b1, b2 = self.unflatten(theta)
+    ASSERT_SIZE(W1, (hidden_size, visible_size))
+    ASSERT_SIZE(W2, (visible_size, hidden_size))
+    ASSERT_SIZE(b1, (hidden_size, 1))
+    ASSERT_SIZE(b2, (visible_size, 1))
+
     utils.save_as_figure(W1.T, "%s/w1frame%03d.png" % (self.options.output_dir,
                                                        self.frame_number))
     utils.save_as_figure(W2.T, "%s/w2frame%03d.png" % (self.options.output_dir,
                                                        self.frame_number))
     self.frame_number += 1
 
-    m_ones = np.ones((1, m))
-    B1 = np.dot(b1, m_ones)
-    B2 = np.dot(b2, m_ones)
-
     # Forward pass
-    z2 = np.dot(W1, x) + B1 # W1 * x + b1
+    z2 = np.dot(W1, x) + b1 # Note: even though the dimensionality doesn't
+                            # match, numpy will apply b1 to every column.
     a2 = self.sigmoid(z2)
-    z3 = np.dot(W2, a2) + B2 # W2 * a2 + b2
-    a3 = self.sigmoid(z3)
+    ASSERT_SIZE(a2, (hidden_size, m))
 
-    # Compute average activation
-    rho_hat = np.mean(a2,1)[:, np.newaxis]
+    z3 = np.dot(W2, a2) + b2 # W2 * a2 + b2
+    a3 = self.sigmoid(z3)
+    ASSERT_SIZE(a3, (visible_size, m))
+
+    # Compute average activation for an edge over all data
+    rho_hat = np.mean(a2, 1)[:, np.newaxis]
+    ASSERT_SIZE(rho_hat, (hidden_size, 1))
     kl = rho*np.log(rho/rho_hat) + (1-rho)*np.log((1-rho)/(1-rho_hat))
 
-    cost = 1./(2.* m)*np.sum(np.sum((a3 - x)**2)) + \
-           (lamb/2.)*(np.sum(np.sum(W1**2)) + np.sum(np.sum(W2**2))) + \
+    cost = 0.5/m * np.sum((a3 - x)**2) + \
+           (lamb/2.)*(np.sum(W1**2) + np.sum(W2**2)) + \
            beta*np.sum(kl)
+
     y = x # we're learning an identity function
     delta3 = -(y - a3) * a3*(1-a3)
-    sparsity = np.dot((-rho/rho_hat + (1-rho)/(1-rho_hat)), m_ones)
+    ASSERT_SIZE(delta3, (visible_size, m))
+
+    sparsity = -rho/rho_hat + (1-rho)/(1-rho_hat)
+    ASSERT_SIZE(sparsity, (hidden_size, 1))
+
     delta2 = (np.dot(W2.T, delta3) + beta * sparsity) * a2 * (1-a2)
+    ASSERT_SIZE(delta2, (hidden_size, m))
+
     W2_grad = 1./m * np.dot(delta3, a2.T) + lamb * W2
-    b2_grad = 1./m * np.sum(delta3, 1)[:, np.newaxis]
-      # sum the rows of delta3 and then mult by  1/m
+    ASSERT_SIZE(W2_grad, (visible_size, hidden_size))
+
+    b2_grad = 1./m * np.sum(delta3, 1)[:, np.newaxis] # [:, newaxis] makes
+                                                      # this into a matrix
+    ASSERT_SIZE(b2_grad, (visible_size, 1))
+    # sum the rows of delta3 and then mult by  1/m
     W1_grad = 1./m * np.dot(delta2, x.T) + lamb * W1
+    ASSERT_SIZE(W1_grad, (hidden_size, visible_size))
+
     b1_grad = 1./m * np.sum(delta2, 1)[:, np.newaxis]
+    ASSERT_SIZE(b1_grad, (hidden_size, 1))
 
     grad = self.flatten(W1_grad, W2_grad, b1_grad, b2_grad)
-
     return (cost, grad)
 
   def learn(self):
-    def s(theta):
+    def f(theta):
       return self.sparse_autoencoder(theta)
     theta = self.initialize_parameters()
-    x, f, d = scipy.optimize.fmin_l_bfgs_b(s, theta, maxfun=100, iprint=1, m=20)
+    same_theta = theta.copy()
+    x, f, d = scipy.optimize.fmin_l_bfgs_b(f, theta, maxfun=400, iprint=1, m=20)
     W1, W2, b1, b2 = self.unflatten(x)
     utils.save_as_figure(W1.T, "%s/network.png" % self.options.output_dir)
