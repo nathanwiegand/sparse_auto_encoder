@@ -55,11 +55,11 @@ def save_as_figure(arr, filepath="output/frame.png"):
     for j in range(0, int(n)):
       if k>=M:
         continue
-      cmax = np.max(arr[:,k])
-      cmin = np.min(arr[:,k])
+      cmax = np.max((arr[:,k]))
+      cmin = np.min((arr[:,k]))
       r = buf+i*(sz+buf)
       c = buf+j*(sz+buf)
-      array[r:r+sz, c:c+sz] = (arr[:,k].reshape([sz,sz], order='F') - cmin) / (cmax-cmin)
+      array[r:r+sz, c:c+sz] = (arr[:,k].reshape([sz,sz], order='F')-cmin) / (cmax-cmin)
       k = k + 1
 #  plt.imshow(array, interpolation='nearest', cmap=plt.cm.gray)
   plt.imshow(array, cmap=plt.cm.gray)

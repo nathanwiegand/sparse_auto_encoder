@@ -109,6 +109,7 @@ class SparseAutoEncoder:
 
     # Compute average activation for an edge over all data
     rho_hat = np.mean(a2, 1)[:, np.newaxis]
+    print rho_hat
     ASSERT_SIZE(rho_hat, (hidden_size, 1))
     kl = rho*np.log(rho/rho_hat) + (1-rho)*np.log((1-rho)/(1-rho_hat))
 
