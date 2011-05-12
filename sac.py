@@ -80,6 +80,24 @@ class SparseAutoEncoder:
   def sigmoid(self, x):
     return 1.0 / (1.0 + np.exp(-x))
 
+  # ==Forward pass==
+  # Note: even though the dimensionality doesn't match because <p>$$b1$$</p>
+  # is a vector, numpy will apply b1 to every column.
+  def feed_forward(self, x, W1, W2, b1, b2):
+    visible_size = self.options.visible_size
+    hidden_size = self.options.hidden_size
+    ASSERT_SIZE(W1, (hidden_size, visible_size))
+
+    m = x.shape[1]
+    z2 = np.dot(W1, x) + b1
+    a2 = self.sigmoid(z2)
+    ASSERT_SIZE(a2, (hidden_size, m))
+
+    z3 = np.dot(W2, a2) + b2 # W2 * a2 + b2
+    a3 = self.sigmoid(z3)
+    ASSERT_SIZE(a3, (visible_size, m))
+    return a2, a3
+
   # Compute the cost function J and the gradient for an input.  Note that this
   # takes a flattened W1, W2, b1, b2 because of fmin_l_bfgs_b.
   def sparse_autoencoder(self, theta):
@@ -98,7 +116,7 @@ class SparseAutoEncoder:
     ASSERT_SIZE(b1, (hidden_size, 1))
     ASSERT_SIZE(b2, (visible_size, 1))
 
-    if self.frame_number % 5 == 0:
+    if self.frame_number % 100 == 0:
       utils.save_as_figure(W1.T,
                            "%s/w1frame%03d.png" % (self.options.output_dir,
                                                    self.frame_number))
@@ -107,20 +125,10 @@ class SparseAutoEncoder:
                                                    self.frame_number))
     self.frame_number += 1
 
-    # ==Forward pass==
-    # Note: even though the dimensionality doesn't match because <p>$$b1$$</p>
-    # is a vector, numpy will apply b1 to every column.
-    z2 = np.dot(W1, x) + b1
-    a2 = self.sigmoid(z2)
-    ASSERT_SIZE(a2, (hidden_size, m))
-
-    z3 = np.dot(W2, a2) + b2 # W2 * a2 + b2
-    a3 = self.sigmoid(z3)
-    ASSERT_SIZE(a3, (visible_size, m))
+    a2, a3 = self.feed_forward(x, W1, W2, b1, b2)
 
     # Compute average activation for an edge over all data
     rho_hat = np.mean(a2, 1)[:, np.newaxis]
-    print rho_hat
     ASSERT_SIZE(rho_hat, (hidden_size, 1))
     kl = rho*np.log(rho/rho_hat) + (1-rho)*np.log((1-rho)/(1-rho_hat))
 
