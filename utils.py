@@ -2,6 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import struct
 
+def ASSERT_SIZE(matrix, shape):
+  if matrix.shape != shape:
+    raise AssertionError("Wrong shape: %s expexted: %s" %
+                            (matrix.shape, shape))
+
+def ASSERT_NO_NAN(matrix):
+  if np.max(np.isnan(matrix)):
+    raise AssertionError("Contains NaN: %s" % matrix)
+
 ################################################################################
 #  The following code to read MNIST data is copied from Zellyn:
 #    https://github.com/zellyn/deeplearning-class-2011/tree/master/ufldf/starter
